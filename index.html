@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus EMS | Casino Royale Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <style>
+        :root {
+            --space-bg: #0a0605;
+            --casino-red: #8b0000;
+            --casino-gold: #d4af37;
+            --gold-glow: 0 0 15px rgba(212, 175, 55, 0.4);
+            --glass: rgba(20, 15, 12, 0.85);
+            --glass-border: rgba(212, 175, 55, 0.15);
+            --text-white: #fffcf5;
+            --text-dim: #bda891;
+            --success-neon: #2ecc71;
+            --danger-neon: #e74c3c;
+            --radius-compact: 12px;
+        }
+
+        * { box-sizing: border-box; transition: all 0.3s ease; }
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: 
+                radial-gradient(circle at top left, rgba(139,0,0,0.12), transparent 40%),
+                radial-gradient(circle at bottom right, rgba(212,175,55,0.08), transparent 40%),
+                #0a0605;
+            color: var(--text-white); 
+            margin: 0; 
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* NAVIGATION */
+        nav {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 0 30px;
+            display: none; 
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            height: 55px;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .logo-box { 
+            width: 28px; height: 28px; background: var(--casino-gold); 
+            border-radius: 4px; box-shadow: var(--gold-glow); 
+            display: grid; place-items: center; font-weight: 900; color: #000; font-size: 0.9rem;
+        }
+
+        .tab-btn {
+            background: transparent; border: none; padding: 8px 14px;
+            font-weight: 700; color: var(--text-dim); cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif; font-size: 0.75rem;
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .tab-btn.active { color: var(--casino-gold); text-shadow: var(--gold-glow); border-bottom: 2px solid var(--casino-gold); }
+
+        .container { display: none; max-width: 1300px; margin: 25px auto; padding: 0 25px; }
+
+        .page-header h1 { 
+            font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; 
+            font-weight: 700; margin: 0;
+            background: linear-gradient(to bottom, #fff, var(--casino-gold));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .card { 
+            background: var(--glass);
+            border-radius: var(--radius-compact); 
+            border: 1px solid var(--glass-border); 
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--casino-gold), transparent);
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { 
+            text-align: left; padding: 10px 15px; font-size: 0.65rem; 
+            text-transform: uppercase; color: var(--casino-gold); letter-spacing: 0.15em;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        td { 
+            padding: 12px 15px; font-size: 0.85rem;
+            border-bottom: 1px solid rgba(255,255,255,0.03); 
+        }
+        tr:hover td { background: rgba(212, 175, 55, 0.03); }
+
+        .btn {
+            padding: 8px 18px; border-radius: 8px; font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif; cursor: pointer;
+            font-size: 0.75rem; text-transform: uppercase;
+            border: 1px solid var(--casino-gold); background: transparent; color: var(--casino-gold);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--casino-gold), #b8860b);
+            color: #000; border: none; box-shadow: var(--gold-glow);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(212,175,55,0.6); }
+        .btn-danger-outline { border-color: var(--danger-neon); color: var(--danger-neon); }
+        .btn-sm { padding: 4px 10px; font-size: 0.65rem; border-radius: 4px; }
+
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 0.65rem; color: var(--casino-gold); margin-bottom: 5px; font-weight: 800; letter-spacing: 0.1em; }
+        input, select, textarea {
+            width: 100%; padding: 10px 14px; background: rgba(0,0,0,0.3);
+            border: 1px solid var(--glass-border); border-radius: 6px;
+            color: white; font-size: 0.85rem; font-family: inherit;
+        }
+        select { color: #000; background: #fff; font-weight: 600; }
+        input:focus, select:focus { border-color: var(--casino-gold); outline: none; box-shadow: 0 0 10px rgba(212,175,55,0.2); }
+        input[readonly] { background: rgba(255,255,255,0.02); color: var(--text-dim); }
+
+        .clock-station-container { max-width: 600px; margin: 40px auto; text-align: center; }
+        .clock-display {
+            font-family: 'Space Grotesk', sans-serif; font-size: 4.5rem; font-weight: 800;
+            color: var(--casino-gold); text-shadow: var(--gold-glow); text-align: center;
+            margin-bottom: 20px; letter-spacing: -2px;
+        }
+
+        #loginScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, #1a0f0a 0%, #050302 100%);
+            z-index: 9999; display: flex; align-items: center; justify-content: center;
+        }
+        .login-card { width: 340px; padding: 40px; background: var(--glass); border: 1px solid var(--casino-gold); border-radius: 20px; text-align: center; }
+
+        .notif-card { width: 380px; padding: 30px; border-radius: 15px; border: 1px solid var(--casino-gold); background: #0a0605; box-shadow: 0 0 40px rgba(0,0,0,0.9); }
+
+        .modal-base { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 3000; align-items: center; justify-content: center; }
+        .modal-card { background: #0f0a08; border: 1px solid var(--casino-gold); border-radius: 15px; padding: 25px; width: 400px; box-shadow: var(--gold-glow); max-height: 90vh; overflow-y: auto; }
+        
+        .full-screen-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 6, 5, 0.98); z-index: 2000; overflow-y: auto; padding: 50px 0; }
+        .form-content { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+
+        .roster-container { border: 1px solid var(--glass-border); border-radius: 10px; overflow: auto; max-height: 65vh; background: rgba(0,0,0,0.5); margin-top: 15px; }
+        .roster-grid { display: grid; }
+        .roster-header-cell { background: #150f0d; padding: 10px; color: var(--casino-gold); font-size: 0.65rem; text-align: center; border: 1px solid var(--glass-border); font-weight: 800; position: sticky; top: 0; z-index: 100; text-transform: uppercase; }
+        .roster-cell-name { position: sticky; left: 0; z-index: 50; background: #0f0a08 !important; border-right: 2px solid var(--casino-gold) !important; padding-left: 15px; font-weight: 700; white-space: nowrap; text-align: left; }
+        .roster-header-cell-name { position: sticky; left: 0; top: 0; z-index: 150; background: #150f0d !important; border-right: 2px solid var(--casino-gold) !important; text-align: left; }
+        .roster-cell { padding: 5px; text-align: center; border: 1px solid var(--glass-border); color: var(--text-white); min-height: 45px; display: flex; align-items: center; justify-content: center; }
+
+        .badge { padding: 3px 8px; border-radius: 4px; font-size: 0.6rem; font-weight: 800; text-transform: uppercase; display: inline-block; }
+        .badge-active { color: var(--success-neon); border: 1px solid var(--success-neon); }
+        .badge-inactive { color: var(--danger-neon); border: 1px solid var(--danger-neon); }
+        .badge-admin { color: var(--casino-gold); border: 1px solid var(--casino-gold); }
+
+        #userStatus { position: fixed; bottom: 15px; right: 15px; background: var(--glass); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--glass-border); display: none; align-items: center; gap: 8px; font-size: 0.75rem; z-index: 2000; }
+        #notificationOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 99999; align-items: center; justify-content: center; }
+
+        body::after {
+            content:''; position:fixed; top:0; left:-120%; width:50%; height:100%;
+            background: linear-gradient(90deg, transparent, rgba(212,175,55,0.05), transparent);
+            transform: skewX(-20deg); animation: casinoShine 10s linear infinite;
+            pointer-events:none; z-index: -1;
+        }
+        @keyframes casinoShine { 0% { left:-120%; } 100% { left:160%; } }
+
+        .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .span-2 { grid-column: span 2; }
+        #imgPreviewBig { width: 110px; height: 110px; border-radius: 15px; border: 1px solid var(--casino-gold); box-shadow: var(--gold-glow); object-fit: cover; }
+        .employee-record-shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 24px; align-items: start; }
+        .employee-side-nav {
+            position: sticky; top: 25px; display: grid; gap: 8px;
+            padding: 14px; border: 1px solid var(--glass-border); border-radius: 10px;
+            background: rgba(0,0,0,0.28);
+        }
+        .employee-side-nav h3 {
+            margin: 0 0 8px 0; color: var(--casino-gold);
+            font-family: 'Space Grotesk'; font-size: 0.75rem;
+            text-transform: uppercase; letter-spacing: 0.08em;
+        }
+        .employee-section-tab {
+            width: 100%; justify-content: flex-start; border-color: transparent;
+            color: var(--text-dim); background: rgba(255,255,255,0.02);
+        }
+        .employee-section-tab.active {
+            color: #000; background: linear-gradient(135deg, var(--casino-gold), #b8860b);
+            box-shadow: var(--gold-glow);
+        }
+        .employee-section-overlay {
+            display: none; border: 1px solid var(--glass-border); border-radius: 10px;
+            padding: 22px; background: rgba(255,255,255,0.025);
+        }
+        .employee-section-overlay.active { display: block; }
+        .employee-section-overlay h3 {
+            margin: 0 0 18px 0; color: var(--casino-gold);
+            font-family: 'Space Grotesk'; font-size: 1rem;
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        @media (max-width: 820px) {
+            .employee-record-shell { grid-template-columns: 1fr; }
+            .employee-side-nav { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .employee-side-nav h3 { grid-column: 1 / -1; }
+            .form-grid { grid-template-columns: 1fr; }
+            .span-2 { grid-column: span 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="userStatus">
+    <div style="width:6px; height:6px; border-radius:50%; background:var(--casino-gold); box-shadow: var(--gold-glow);"></div>
+    <span id="displayUserName" style="font-weight:700; color:var(--casino-gold); text-transform:uppercase; font-family:'Space Grotesk';"></span>
+</div>
+
+<div id="notificationOverlay">
+    <div id="notifCard" class="notif-card" style="text-align: center;">
+        <div id="notifIcon" style="font-size: 2.5rem; margin-bottom: 15px;"></div>
+        <h2 id="notifHeader" style="font-family: 'Space Grotesk'; margin: 0 0 10px 0; color: var(--casino-gold);"></h2>
+        <p id="notifBody" style="font-size: 0.9rem; margin-bottom: 20px; color: var(--text-dim);"></p>
+        <button class="btn btn-primary" style="margin: 0 auto;" onclick="closeOverlay('notificationOverlay')">CONTINUE</button>
+    </div>
+</div>
+
+<div id="loginScreen">
+    <div class="login-card">
+        <div class="logo-box" style="margin: 0 auto 15px;">N</div>
+        <h3 style="font-family:'Space Grotesk'; margin: 0 0 5px 0;">NEXUS EMS</h3>
+        <p style="color:var(--text-dim); font-size:0.7rem; margin-bottom:25px;">SECURE TERMINAL ACCESS</p>
+        <div style="text-align:left; display:grid; gap:15px;">
+            <div class="input-group">
+                <label>USERNAME</label>
+                <input type="text" id="loginUser" placeholder="Email or Username">
+            </div>
+            <div class="input-group">
+                <label>PASSWORD</label>
+                <input type="password" id="loginPass" placeholder="••••••••">
+            </div>
+            <button class="btn btn-primary" onclick="handleLogin()" style="width:100%; justify-content:center; margin-top:10px;">AUTHORIZE ENTRY</button>
+        </div>
+    </div>
+</div>
+
+<nav id="mainNav">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="logo-box">N</div>
+        <span style="font-weight: 800; font-family: 'Space Grotesk'; font-size: 1.1rem; letter-spacing: 0.05em;">NEXUS <span style="color:var(--casino-gold)">EMS</span></span>
+    </div>
+    <div style="display:flex; gap:2px; align-items:center;">
+        <button id="navEmployees" class="tab-btn active" onclick="switchTab('employees')">Staff</button>
+        <button id="navRoster" class="tab-btn" onclick="switchTab('roster')">Roster</button>
+        <button id="navTime" class="tab-btn" onclick="switchTab('time')">Time</button>
+        <button id="navPayroll" class="tab-btn" onclick="switchTab('payroll')">Payroll</button>
+        <button id="navUsers" class="tab-btn" onclick="switchTab('users')">Users</button>
+        <div style="width:1px; height:20px; background:var(--glass-border); margin:0 10px;"></div>
+        <button class="btn btn-danger-outline" style="font-size:0.65rem; padding:5px 12px;" onclick="handleLogout()">Logout</button>
+    </div>
+</nav>
+
+<div id="mainContainer" class="container">
+    
+    <div id="employees" class="tab-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div class="page-header">
+                <h1>Staff Directory</h1>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="staffSearch" placeholder="Search staff..." oninput="renderStaff()" style="width:200px;">
+                <button class="btn btn-primary" onclick="openOverlayForNew()">+ Add Staff</button>
+            </div>
+        </div>
+        <div class="card">
+            <table>
+                <thead>
+                    <tr><th>Full Name</th><th>Contact Info</th><th>Job Title & Dept</th><th>Status</th><th style="text-align:right">Management</th></tr>
+                </thead>
+                <tbody id="staffTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="roster" class="tab-content" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div class="page-header">
+                <h1>Roster Control Dashboard</h1>
+                <p style="color:var(--text-dim); font-size:0.75rem; margin-top:2px;">Operational Flow & Department Rotations</p>
+            </div>
+            <button class="btn btn-primary" onclick="openDeptNew()">+ New Department</button>
+        </div>
+
+        <div class="card" style="margin-bottom:25px;">
+            <div style="margin-bottom:15px;">
+                <h3 style="color:var(--casino-gold); margin:0; font-family:'Space Grotesk'; font-size: 0.95rem; text-transform:uppercase; letter-spacing:0.05em;">Shift Departments</h3>
+            </div>
+            <table>
+                <thead>
+                    <tr><th>Department Name</th><th>Code</th><th>Staff</th><th>Shifts</th><th style="text-align:right">Action</th></tr>
+                </thead>
+                <tbody id="deptTableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <div style="margin-bottom:15px;">
+                <h3 style="color:var(--casino-gold); margin:0; font-family:'Space Grotesk'; font-size: 0.95rem; text-transform:uppercase; letter-spacing:0.05em;">Saved Roster Archive</h3>
+            </div>
+            <div id="masterRosterArchive" style="display:grid; gap:10px;"></div>
+        </div>
+    </div>
+
+    <div id="time" class="tab-content" style="display:none;">
+        <div class="clock-station-container">
+            <div class="page-header">
+                <h1>Clock Station</h1>
+                <p style="color:var(--text-dim); margin-top:5px; font-size: 0.8rem; text-transform:uppercase;">Biometric Terminal Interface</p>
+            </div>
+            
+            <div id="liveClock" class="clock-display">00:00:00</div>
+            
+            <div class="card" style="padding: 30px;">
+                <div class="input-group" style="margin-bottom:25px;">
+                    <label>SELECT EMPLOYEE IDENTITY</label>
+                    <select id="timeStaffSelect" style="padding:12px; font-size:1rem; border-radius:6px;"></select>
+                </div>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                    <button class="btn btn-primary" style="padding:14px; font-size:0.9rem; background:var(--success-neon); color:#000; border:none; justify-content:center;" onclick="clockAction('IN')">CLOCK IN</button>
+                    <button class="btn btn-danger-outline" style="padding:14px; font-size:0.9rem; justify-content:center;" onclick="clockAction('OUT')">CLOCK OUT</button>
+                </div>
+                <div id="rosterStatusMsg" style="margin-top:20px; padding:12px; border-radius:6px; font-size:0.8rem; display:none; font-weight:700;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="payroll" class="tab-content" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div class="page-header">
+                <h1>Payroll Engine</h1>
+                <p style="color:var(--text-dim); font-size:0.75rem; margin-top:2px;">Financial Periods & Summaries</p>
+            </div>
+            <button class="btn btn-primary" onclick="openPayrollPeriodNew()">+ Create Period</button>
+        </div>
+        <div class="card" style="margin-bottom:30px;">
+            <h3 style="color:var(--casino-gold); margin-top:0; font-family:'Space Grotesk'; font-size: 0.95rem;">Active Payroll Tracking Periods</h3>
+            <div id="payrollPeriodList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:12px;"></div>
+        </div>
+        
+        <div class="page-header" style="margin-bottom:15px;"><h1 style="font-size: 1.3rem;">Staff Total Accumulated Hours</h1></div>
+        <div class="card">
+            <table>
+                <thead>
+                    <tr><th>Staff Member</th><th>Total Worked Hours</th><th style="text-align:right">Management Action</th></tr>
+                </thead>
+                <tbody id="totalHoursTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="users" class="tab-content" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div class="page-header">
+                <h1>System Security Users</h1>
+                <p style="color:var(--text-dim); font-size:0.75rem; margin-top:2px;">Terminal Administrative Access Rules</p>
+            </div>
+            <button class="btn btn-primary" onclick="openUserNew()">+ Create Security User</button>
+        </div>
+        <div class="card">
+            <table>
+                <thead>
+                    <tr><th>Security Name</th><th>Username / Identity Email</th><th>Role Access Profile</th><th style="text-align:right">Management</th></tr>
+                </thead>
+                <tbody id="userTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="adminPasswordOverlay" class="modal-base">
+    <div class="modal-card">
+        <h3 style="font-family:'Space Grotesk'; margin-top:0; color:var(--casino-gold);">Authorization Required</h3>
+        <p style="font-size:0.8rem; color:var(--text-dim);">Input administrator system credentials to execute action.</p>
+        <div class="input-group">
+            <label>ADMINISTRATOR PASSWORD</label>
+            <input type="password" id="adminVerificationPassword" placeholder="••••••••">
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+            <button class="btn btn-sm" onclick="closeOverlay('adminPasswordOverlay')">Cancel</button>
+            <button class="btn btn-primary btn-sm" onclick="submitAdminPasswordVerification()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<div id="historyBreakdownOverlay" class="modal-base">
+    <div class="modal-card" style="width:500px;">
+        <h3 style="font-family:'Space Grotesk'; margin-top:0; color:var(--casino-gold);" id="historyBreakdownTitle">Attendance Logs</h3>
+        <div style="max-height:300px; overflow-y:auto; margin-bottom:20px;">
+            <table>
+                <thead>
+                    <tr><th>Date</th><th>In Time</th><th>Out Time</th><th>Net Hours</th></tr>
+                </thead>
+                <tbody id="historyBreakdownTableBody"></tbody>
+            </table>
+        </div>
+        <button class="btn btn-sm" style="margin-left:auto;" onclick="closeOverlay('historyBreakdownOverlay')">Close</button>
+    </div>
+</div>
+
+<div id="adminEditLogsOverlay" class="modal-base">
+    <div class="modal-card" style="width:620px;">
+        <h3 style="font-family:'Space Grotesk'; margin-top:0; color:var(--casino-gold);" id="adminEditTitle">Admin Shift Overrides</h3>
+        
+        <div id="adminEditTotalHoursSummary" style="font-size: 0.95rem; color: var(--success-neon); font-weight: 700; margin-bottom: 15px; padding: 10px; background: rgba(46,204,113,0.1); border-radius: 6px;">
+            Total Worked Hours: 0.00 hrs
+        </div>
+
+        <div style="max-height:350px; overflow-y:auto; margin-bottom:25px;">
+            <table>
+                <thead>
+                    <tr><th>Date</th><th>Clocked In</th><th>Clocked Out</th><th style="text-align:right;">Authorize Shift</th></tr>
+                </thead>
+                <tbody id="adminEditTableBody"></tbody>
+            </table>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+            <button class="btn btn-primary btn-sm" onclick="closeOverlay('adminEditLogsOverlay')">Save & Finish</button>
+        </div>
+    </div>
+</div>
+
+<div id="employeeOverlay" class="full-screen-overlay">
+    <div class="form-content">
+        <h2 style="font-family:'Space Grotesk'; color:var(--casino-gold); margin-bottom:30px;">Personnel Record File</h2>
+
+        <div class="employee-record-shell">
+            <div class="employee-side-nav">
+                <h3>Record Sections</h3>
+                <button class="btn btn-sm employee-section-tab active" data-employee-section-tab="employeeDetails" onclick="showEmployeeSection('employeeDetails')">Employee Details</button>
+                <button class="btn btn-sm employee-section-tab" data-employee-section-tab="employmentDetails" onclick="showEmployeeSection('employmentDetails')">Employment Details</button>
+                <button class="btn btn-sm employee-section-tab" data-employee-section-tab="bankingDetails" onclick="showEmployeeSection('bankingDetails')">Banking Details</button>
+                <button class="btn btn-sm employee-section-tab" data-employee-section-tab="nextOfKinDetails" onclick="showEmployeeSection('nextOfKinDetails')">Next of Kin Details</button>
+            </div>
+
+            <div>
+                <div id="employeeDetailsSection" class="employee-section-overlay active" data-employee-section="employeeDetails">
+                    <h3>Employee Details</h3>
+
+                    <div style="display:flex; gap:30px; margin-bottom:25px; align-items:center;">
+                        <img id="imgPreviewBig" src="https://ui-avatars.com/api/?name=User&background=random">
+                        <div>
+                            <div class="input-group">
+                                <label>UPLOAD AVATAR IMAGE</label>
+                                <input type="file" id="empImageFile" accept="image/*" onchange="previewImageFile()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="input-group"><label>EMPLOYEE NUMBER</label><input type="text" id="empNum"></div>
+                        <div class="input-group"><label>FIRST NAME</label><input type="text" id="fName" oninput="autoFull()"></div>
+                        <div class="input-group"><label>LAST NAME</label><input type="text" id="lName" oninput="autoFull()"></div>
+                        <div class="input-group span-2"><label>FULL NAME</label><input type="text" id="fullName" readonly></div>
+                        <div class="input-group">
+                            <label>GENDER</label>
+                            <select id="gender"><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select>
+                        </div>
+                        <div class="input-group"><label>IDENTITY / PASSPORT NO</label><input type="text" id="idNum"></div>
+                        <div class="input-group"><label>DATE OF BIRTH</label><input type="date" id="dob"></div>
+                        <div class="input-group"><label>CELLPHONE NUMBER</label><input type="text" id="cellPhone"></div>
+                        <div class="input-group"><label>EMAIL ADDRESS</label><input type="email" id="email"></div>
+                        <div class="input-group span-2"><label>STREET ADDRESS</label><input type="text" id="street"></div>
+                        <div class="input-group"><label>SUBURB</label><input type="text" id="suburb"></div>
+                        <div class="input-group"><label>CITY</label><input type="text" id="city"></div>
+                        <div class="input-group"><label>PROVINCE</label><input type="text" id="province"></div>
+                    </div>
+                </div>
+
+                <div id="employmentDetailsSection" class="employee-section-overlay" data-employee-section="employmentDetails">
+                    <h3>Employment Details</h3>
+
+                    <div class="form-grid">
+                        <div class="input-group"><label>JOB POSITION TITLE</label><input type="text" id="pos"></div>
+                        <div class="input-group"><label>START ENGAGEMENT DATE</label><input type="date" id="startDate"></div>
+                        <div class="input-group">
+                            <label>PERSONNEL STATUS</label>
+                            <select id="empStatus" onchange="handleStatusChange()"><option value="Active">Active</option><option value="Inactive">Deactivated</option></select>
+                        </div>
+                    </div>
+
+                    <div id="deactivationBlock" style="display:none; margin-top:15px; padding:20px; border:1px solid var(--danger-neon); border-radius:6px; background:rgba(231,76,60,0.05);">
+                        <div class="form-grid" style="grid-template-columns: 1fr 2fr;">
+                            <div class="input-group"><label>DEACTIVATION DATE</label><input type="date" id="deactivationDate"></div>
+                            <div class="input-group"><label>REASON FOR SUSPENSION / INACTIVITY</label><input type="text" id="inactiveReason" placeholder="State operational reason details..."></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="bankingDetailsSection" class="employee-section-overlay" data-employee-section="bankingDetails">
+                    <h3>Banking Details</h3>
+
+                    <div class="form-grid">
+                        <div class="input-group"><label>BANK NAME</label><input type="text" id="bankName"></div>
+                        <div class="input-group"><label>ACCOUNT HOLDER</label><input type="text" id="bankAccountHolder"></div>
+                        <div class="input-group"><label>ACCOUNT NUMBER</label><input type="text" id="bankAccountNumber"></div>
+                        <div class="input-group">
+                            <label>ACCOUNT TYPE</label>
+                            <select id="bankAccountType"><option value="">Select type</option><option value="Savings">Savings</option><option value="Current">Current</option><option value="Transmission">Transmission</option></select>
+                        </div>
+                        <div class="input-group"><label>BRANCH CODE</label><input type="text" id="bankBranchCode"></div>
+                        <div class="input-group"><label>TAX NUMBER</label><input type="text" id="taxNumber"></div>
+                    </div>
+                </div>
+
+                <div id="nextOfKinDetailsSection" class="employee-section-overlay" data-employee-section="nextOfKinDetails">
+                    <h3>Next of Kin Details</h3>
+
+                    <div class="form-grid">
+                        <div class="input-group"><label>NEXT OF KIN FULL NAME</label><input type="text" id="kinName"></div>
+                        <div class="input-group"><label>RELATIONSHIP</label><input type="text" id="kinRelationship"></div>
+                        <div class="input-group"><label>CONTACT NUMBER</label><input type="text" id="kinCellPhone"></div>
+                        <div class="input-group"><label>EMAIL ADDRESS</label><input type="email" id="kinEmail"></div>
+                        <div class="input-group span-2"><label>PHYSICAL ADDRESS</label><input type="text" id="kinAddress"></div>
+                        <div class="input-group span-2"><label>NOTES</label><input type="text" id="kinNotes" placeholder="Medical, emergency, or contact instructions..."></div>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:15px; margin-top:40px;">
+                    <button class="btn" onclick="closeOverlay('employeeOverlay')">Discard changes</button>
+                    <button class="btn btn-primary" onclick="saveStaff()">Save Profile File</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="deptOverlay" class="full-screen-overlay">
+    <div class="form-content" style="max-width:700px;">
+        <h2 style="font-family:'Space Grotesk'; color:var(--casino-gold); margin-bottom:25px;">Department Structure Template</h2>
+        
+        <div class="card" style="margin-bottom:20px;">
+            <div class="form-grid" style="grid-template-columns: 2fr 1fr;">
+                <div class="input-group"><label>DEPARTMENT NAME</label><input type="text" id="deptName"></div>
+                <div class="input-group"><label>DEPARTMENT CODE</label><input type="text" id="deptCode"></div>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:40px;">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h3 style="margin:0; color:var(--casino-gold); font-size: 0.95rem;">Operational Shifts</h3>
+                    <button class="btn btn-sm" onclick="openShiftOverlay()">+ Add</button>
+                </div>
+                <div id="shiftList" style="display:grid; gap:10px;"></div>
+            </div>
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h3 style="margin:0; color:var(--casino-gold); font-size: 0.95rem;">Allocated Core Personnel</h3>
+                    <button class="btn btn-sm" onclick="openAllocationOverlay()">+ Link Staff</button>
+                </div>
+                <div id="allocatedStaffSummaryList" style="font-size:0.85rem; color:var(--text-dim); display:grid; gap:5px;"></div>
+            </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:15px;">
+            <button class="btn" onclick="closeOverlay('deptOverlay')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveDept()">Save Department Template</button>
+        </div>
+    </div>
+</div>
+
+<div id="shiftOverlay" class="modal-base" style="z-index:2500;">
+    <div class="modal-card">
+        <h3 style="font-family:'Space Grotesk'; margin-top:0; color:var(--casino-gold);">New Rotation Shift</h3>
+        <div class="input-group"><label>SHIFT IDENTIFIER / NAME</label><input type="text" id="shiftName" placeholder="e.g. Day Shift, Night Shift"></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div class="input-group"><label>START TIME</label><input type="time" id="shiftStart"></div>
+            <div class="input-group"><label>END TIME</label><input type="time" id="shiftEnd"></div>
+        </div>
+        <div class="input-group">
+            <label>LUNCH TIME DEDUCTION (MINUTES)</label>
+            <select id="shiftLunch"><option value="0">0 Min</option><option value="30">30 Min</option><option value="60">60 Min</option></select>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+            <button class="btn btn-sm" onclick="closeOverlay('shiftOverlay')">Cancel</button>
+            <button class="btn btn-primary btn-sm" onclick="addShift()">Save Shift</button>
+        </div>
+    </div>
+</div>
+
+<div id="allocationOverlay" class="modal-base" style="z-index:2500;">
+    <div class="modal-card" style="width:450px;">
+        <h3 style="font-family:'Space Grotesk'; margin-top:0; color:var(--casino-gold);">Link Core Department Personnel</h3>
+        <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:15px;">Select staff members belonging to this active tracking rotation template.</p>
+        <div id="allocationCheckboxContainer" style="max-height:280px; overflow-y:auto; display:grid; gap:10px; padding-right:5px;"></div>
+        <button class="btn btn-primary btn-sm" style="margin-top:20px; width:100%; justify-content:center;" onclick="closeOverlay('allocationOverlay')">Done Allocation</button>
+    </div>
+</div>
+
+<div id="payrollPeriodOverlay" class="modal-base">
+    <div class="modal-card">
+        <h3 style="font-family:'Space Grotesk'; margin-top:0; color:var(--casino-gold);">Payroll Financial Cycle</h3>
+        <div style="display:grid; gap:15px;">
+            <div class="input-group"><label>PERIOD ACCOUNT NAME</label><input type="text" id="ppName" placeholder="e.g. May 2026 Tracking Cycle"></div>
+            <div class="input-group"><label>CYCLE START DATE</label><input type="date" id="ppStart"></div>
+            <div class="input-group"><label>CYCLE END DATE</label><input type="date" id="ppEnd"></div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                <button class="btn btn-sm" onclick="closeOverlay('payrollPeriodOverlay')">Cancel</button>
+                <button class="btn btn-primary btn-sm" onclick="savePayrollPeriod()">Save Cycle</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="payrollRosterSelectOverlay" class="modal-base">
+    <div class="modal-card" style="width:450px;">
+        <h3 style="font-family:'Space Grotesk'; margin:0 0 15px 0; color:var(--casino-gold);">Load Roster Grid Context</h3>
+        <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:15px;">Choose tracking period to bind calendar grid generation logic.</p>
+        <div id="payrollRosterList" style="display:grid; gap:10px;"></div>
+        <button class="btn btn-sm" style="margin-top:20px;" onclick="closeOverlay('payrollRosterSelectOverlay')">Cancel</button>
+    </div>
+</div>
+
+<div id="rosterCaptureOverlay" class="full-screen-overlay">
+    <div class="form-content" style="max-width:1250px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div>
+                <h2 id="rosterTitle" style="font-family:'Space Grotesk'; color:var(--casino-gold); margin:0;">Monthly Operational Duty Grid</h2>
+                <input type="hidden" id="rosterMonth">
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn" onclick="closeOverlay('rosterCaptureOverlay')">Discard Grid</button>
+                <button class="btn btn-primary" onclick="saveRosterGrid()">Commit Roster Grid</button>
+            </div>
+        </div>
+        
+        <div class="roster-container">
+            <div id="rosterContainer" class="roster-grid"></div>
+        </div>
+    </div>
+</div>
+
+<div id="userOverlay" class="modal-base">
+    <div class="modal-card">
+        <h3 style="font-family:'Space Grotesk'; margin-top:0; color:var(--casino-gold);" id="userModalTitle">Security Access File</h3>
+        <div style="display:grid; gap:15px;">
+            <div class="input-group"><label>OPERATOR PROFILE NAME</label><input type="text" id="usrName"></div>
+            <div class="input-group"><label>IDENTITY EMAIL / LOGON</label><input type="text" id="usrEmail"></div>
+            <div class="input-group"><label>SECURITY PASSCODE</label><input type="password" id="usrPass"></div>
+            <div class="input-group">
+                <label>ACCESS ROLE MATRIX LEVEL</label>
+                <select id="usrRole"><option value="User">Standard Operator</option><option value="Admin">System Administrator</option></select>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                <button class="btn btn-sm" onclick="closeOverlay('userOverlay')">Cancel</button>
+                <button class="btn btn-primary btn-sm" onclick="saveUser()">Commit Access File</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // SUPABASE CONNECTION SETTINGS
+    // Use the base project URL, e.g. https://your-project-ref.supabase.co
+    // Use a publishable key or legacy anon key. Never use a service_role or secret key in this HTML file.
+    const NEXUS_SUPABASE_URL = "https://uthltbaktxaebihfcrtw.supabase.co";
+    const NEXUS_SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0aGx0YmFrdHhhZWJpaGZjcnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTMwNDQsImV4cCI6MjA5Njc2OTA0NH0.dpRdyRojqzp5pC5Q2GMBED3WQdIl5E9TKWocvarB42w";
+    const NEXUS_SUPABASE_TABLE = "nexus_app_store";
+
+    const DEFAULT_PLATFORM_USERS = [
+        { name: 'Administrator', email: 'admin', password: 'password', role: 'Admin' }
+    ];
+
+    const NEXUS_CORE_KEYS = [
+        'nexus_employees',
+        'nexus_departments',
+        'nexus_time_logs',
+        'nexus_pay_periods',
+        'nexus_platform_users',
+        'nexus_roster_archive_index'
+    ];
+
+    const nativeStorageSetItem = Storage.prototype.setItem;
+    const hasSupabaseLibrary = Boolean(window.supabase && window.supabase.createClient);
+    const hasSupabaseConfig = Boolean(NEXUS_SUPABASE_URL && NEXUS_SUPABASE_PUBLISHABLE_KEY && hasSupabaseLibrary);
+    const nexusSupabase = hasSupabaseConfig
+        ? window.supabase.createClient(NEXUS_SUPABASE_URL, NEXUS_SUPABASE_PUBLISHABLE_KEY)
+        : null;
+    document.documentElement.dataset.supabaseLibrary = hasSupabaseLibrary ? 'loaded' : 'missing';
+    document.documentElement.dataset.supabaseConfigured = hasSupabaseConfig ? 'true' : 'false';
+    let supabaseSyncReady = false;
+    let supabaseSyncQueue = Promise.resolve();
+
+    // CORE ARRAYS PERSISTENCE DATABASES
+    let employees = [];
+    let departments = [];
+    let timeLogs = [];
+    let payrollPeriods = [];
+    let platformUsers = DEFAULT_PLATFORM_USERS;
+
+    let currentPhoto = "https://ui-avatars.com/api/?name=User&background=random";
+    let editingIdx = null, editingDeptIdx = null, editingUserIdx = null, editingPayrollPeriodIdx = null, tempShifts = [];
+    let pendingAdminAction = null;
+    let selectedEmpNum = null;
+    let currentAdminName = '';
+
+    function parseStoredJson(key, fallback) {
+        try {
+            const raw = localStorage.getItem(key);
+            return raw ? JSON.parse(raw) : fallback;
+        } catch (err) {
+            console.error(`Could not parse ${key}`, err);
+            return fallback;
+        }
+    }
+
+    function hydrateRuntimeFromLocalStorage() {
+        employees = parseStoredJson('nexus_employees', []);
+        departments = parseStoredJson('nexus_departments', []);
+        timeLogs = parseStoredJson('nexus_time_logs', []);
+        payrollPeriods = parseStoredJson('nexus_pay_periods', []);
+        platformUsers = parseStoredJson('nexus_platform_users', DEFAULT_PLATFORM_USERS);
+    }
+
+    function isNexusStorageKey(key) {
+        return key.startsWith('nexus_') || key.startsWith('roster_');
+    }
+
+    function parseStoragePayload(value) {
+        try {
+            return JSON.parse(value);
+        } catch {
+            return value;
+        }
+    }
+
+    function writeLocalOnly(key, payload) {
+        nativeStorageSetItem.call(localStorage, key, JSON.stringify(payload));
+    }
+
+    function setLoginButtonState(enabled, label) {
+        const btn = document.querySelector('#loginScreen button[onclick="handleLogin()"]');
+        if(!btn) return;
+        btn.disabled = !enabled;
+        btn.innerText = label || 'AUTHORIZE ENTRY';
+        btn.style.opacity = enabled ? '1' : '0.65';
+        btn.style.cursor = enabled ? 'pointer' : 'wait';
+    }
+
+    function syncLocalStorageKeyToSupabase(key, value) {
+        if(!nexusSupabase || !supabaseSyncReady || !isNexusStorageKey(key)) return;
+
+        const payload = parseStoragePayload(value);
+        supabaseSyncQueue = supabaseSyncQueue
+            .then(async () => {
+                const { error } = await nexusSupabase
+                    .from(NEXUS_SUPABASE_TABLE)
+                    .upsert({
+                        store_key: key,
+                        payload,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'store_key' });
+
+                if(error) {
+                    console.error(`Supabase sync failed for ${key}`, error);
+                    showNotification("Supabase Sync Warning", `Saved locally, but cloud sync failed for ${key}.`, "error");
+                }
+            })
+            .catch(err => console.error('Supabase sync queue failed', err));
+    }
+
+    Storage.prototype.setItem = function(key, value) {
+        nativeStorageSetItem.call(this, key, value);
+        if(this === localStorage) syncLocalStorageKeyToSupabase(key, value);
+    };
+
+    async function seedSupabaseFromExistingLocalData() {
+        const keysToSeed = [];
+
+        NEXUS_CORE_KEYS.forEach(key => {
+            if(localStorage.getItem(key)) keysToSeed.push(key);
+        });
+
+        const archiveIndex = parseStoredJson('nexus_roster_archive_index', []);
+        archiveIndex.forEach(item => {
+            if(item.key && localStorage.getItem(item.key)) keysToSeed.push(item.key);
+        });
+
+        for(const key of [...new Set(keysToSeed)]) {
+            const payload = parseStoragePayload(localStorage.getItem(key));
+            const { error } = await nexusSupabase
+                .from(NEXUS_SUPABASE_TABLE)
+                .upsert({
+                    store_key: key,
+                    payload,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'store_key' });
+
+            if(error) throw error;
+        }
+    }
+
+    async function bootstrapSupabaseStore() {
+        hydrateRuntimeFromLocalStorage();
+
+        if(!nexusSupabase) return;
+
+        setLoginButtonState(false, 'CONNECTING...');
+
+        try {
+            const { data, error } = await nexusSupabase
+                .from(NEXUS_SUPABASE_TABLE)
+                .select('store_key,payload');
+
+            if(error) throw error;
+
+            if(data.length === 0) {
+                await seedSupabaseFromExistingLocalData();
+            } else {
+                data.forEach(row => {
+                    if(isNexusStorageKey(row.store_key)) writeLocalOnly(row.store_key, row.payload);
+                });
+            }
+
+            hydrateRuntimeFromLocalStorage();
+            supabaseSyncReady = true;
+            setLoginButtonState(true, 'AUTHORIZE ENTRY');
+            showNotification("Supabase Connected", "Cloud data store is online and ready.", "success");
+        } catch (err) {
+            console.error('Supabase bootstrap failed', err);
+            supabaseSyncReady = false;
+            setLoginButtonState(true, 'AUTHORIZE ENTRY');
+            showNotification("Supabase Offline", "Using local browser storage until the Supabase connection is fixed.", "error");
+        }
+    }
+
+    hydrateRuntimeFromLocalStorage();
+
+    function showNotification(header, body, type = 'info') {
+        const overlay = document.getElementById('notificationOverlay');
+        const card = document.getElementById('notifCard');
+        card.style.borderColor = type === 'success' ? 'var(--success-neon)' : type === 'error' ? 'var(--danger-neon)' : 'var(--casino-gold)';
+        document.getElementById('notifHeader').innerText = header;
+        document.getElementById('notifBody').innerText = body;
+        document.getElementById('notifIcon').innerText = type === 'success' ? '✅' : type === 'error' ? '🚨' : 'ℹ️';
+        overlay.style.display = 'flex';
+    }
+
+    function closeOverlay(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+
+    function handleLogin() {
+        const u = document.getElementById('loginUser').value;
+        const p = document.getElementById('loginPass').value;
+        const matched = platformUsers.find(user => (user.email === u || user.name === u) && user.password === p);
+        if (matched) {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainNav').style.display = 'flex';
+            document.getElementById('mainContainer').style.display = 'block';
+            document.getElementById('userStatus').style.display = 'flex';
+            document.getElementById('displayUserName').innerText = matched.name + " (" + matched.role + ")";
+            initializeDashboardDataHub();
+        } else {
+            showNotification("Access Refused", "Incorrect combination credentials.", "error");
+        }
+    }
+
+    function handleLogout() {
+        document.getElementById('loginUser').value = '';
+        document.getElementById('loginPass').value = '';
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('mainNav').style.display = 'none';
+        document.getElementById('mainContainer').style.display = 'none';
+        document.getElementById('userStatus').style.display = 'none';
+    }
+
+    function switchTab(id) {
+        document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).style.display = 'block';
+        document.getElementById('nav' + id.charAt(0).toUpperCase() + id.slice(1)).classList.add('active');
+        if(id === 'roster') renderDepts();
+        if(id === 'payroll') renderPayrollModule();
+        if(id === 'users') renderUsers();
+    }
+
+    function initializeDashboardDataHub() {
+        renderStaff();
+        populateClockDropdown();
+        setInterval(updateLiveClockTerminal, 1000);
+    }
+
+    function updateLiveClockTerminal() {
+        const c = document.getElementById('liveClock');
+        if(c) c.innerText = new Date().toTimeString().split(' ')[0];
+    }
+
+    function requestAdminAccess(explicitTargetUserIndex, callbackSuccess) {
+        pendingAdminAction = (adminName, isAuthorized) => {
+            if(isAuthorized) callbackSuccess(adminName);
+        };
+        document.getElementById('adminVerificationPassword').value = '';
+        document.getElementById('adminPasswordOverlay').style.display = 'flex';
+    }
+
+    function submitAdminPasswordVerification() {
+        const p = document.getElementById('adminVerificationPassword').value;
+        const admin = platformUsers.find(u => u.role === 'Admin' && u.password === p);
+        if(admin) {
+            closeOverlay('adminPasswordOverlay');
+            const isAuthorized = true;
+            pendingAdminAction(admin.name, isAuthorized);
+            pendingAdminAction = null;
+        } else {
+            showNotification("Access Denied", "Invalid Admin Password.", "error");
+        }
+    }
+
+    // --- STAFF DIRECTORY LOGIC ---
+    function autoFull() {
+        document.getElementById('fullName').value = (document.getElementById('fName').value + " " + document.getElementById('lName').value).trim();
+    }
+
+    function handleStatusChange() {
+        const s = document.getElementById('empStatus').value;
+        document.getElementById('deactivationBlock').style.display = s === 'Inactive' ? 'block' : 'none';
+    }
+
+    function showEmployeeSection(sectionId) {
+        document.querySelectorAll('[data-employee-section]').forEach(section => {
+            section.classList.toggle('active', section.dataset.employeeSection === sectionId);
+        });
+        document.querySelectorAll('[data-employee-section-tab]').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.employeeSectionTab === sectionId);
+        });
+    }
+
+    function previewImageFile() {
+        const file = document.getElementById('empImageFile').files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('imgPreviewBig').src = e.target.result;
+                currentPhoto = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function openOverlayForNew() {
+        editingIdx = null;
+        document.querySelectorAll('#employeeOverlay input:not([type="file"])').forEach(i => i.value = '');
+        document.getElementById('gender').value = 'Male';
+        document.getElementById('empStatus').value = 'Active';
+        document.getElementById('bankAccountType').value = '';
+        document.getElementById('imgPreviewBig').src = "https://ui-avatars.com/api/?name=User&background=random";
+        currentPhoto = "https://ui-avatars.com/api/?name=User&background=random";
+        handleStatusChange();
+        showEmployeeSection('employeeDetails');
+        document.getElementById('employeeOverlay').style.display = 'block';
+    }
+
+    function editEmployee(idx) {
+        editingIdx = idx;
+        const e = employees[idx];
+        ['empNum','fName','lName','fullName','gender','idNum','dob','cellPhone','email','street','suburb','city','province','pos','startDate','deactivationDate','inactiveReason','bankName','bankAccountHolder','bankAccountNumber','bankAccountType','bankBranchCode','taxNumber','kinName','kinRelationship','kinCellPhone','kinEmail','kinAddress','kinNotes'].forEach(field => {
+            const el = document.getElementById(field);
+            if(el) el.value = e[field] || '';
+        });
+        document.getElementById('empStatus').value = e.status || 'Active';
+        document.getElementById('imgPreviewBig').src = e.img || "https://ui-avatars.com/api/?name=User&background=random";
+        currentPhoto = e.img || "https://ui-avatars.com/api/?name=User&background=random";
+        handleStatusChange();
+        showEmployeeSection('employeeDetails');
+        document.getElementById('employeeOverlay').style.display = 'block';
+    }
+
+    function saveStaff() {
+        const empNum = document.getElementById('empNum').value;
+        const fullName = document.getElementById('fullName').value;
+        if(!empNum || !fullName) {
+            showEmployeeSection('employeeDetails');
+            return showNotification("Missing Criteria", "Fields Employee Number and Full Name are mandatory.", "error");
+        }
+
+        const data = {
+            ...(editingIdx === null ? {} : employees[editingIdx]),
+            empNum, fullName,
+            fName: document.getElementById('fName').value,
+            lName: document.getElementById('lName').value,
+            gender: document.getElementById('gender').value,
+            idNum: document.getElementById('idNum').value,
+            dob: document.getElementById('dob').value,
+            cellPhone: document.getElementById('cellPhone').value,
+            email: document.getElementById('email').value,
+            street: document.getElementById('street').value,
+            suburb: document.getElementById('suburb').value,
+            city: document.getElementById('city').value,
+            province: document.getElementById('province').value,
+            pos: document.getElementById('pos').value,
+            startDate: document.getElementById('startDate').value,
+            status: document.getElementById('empStatus').value,
+            deactivationDate: document.getElementById('deactivationDate').value,
+            inactiveReason: document.getElementById('inactiveReason').value,
+            bankName: document.getElementById('bankName').value,
+            bankAccountHolder: document.getElementById('bankAccountHolder').value,
+            bankAccountNumber: document.getElementById('bankAccountNumber').value,
+            bankAccountType: document.getElementById('bankAccountType').value,
+            bankBranchCode: document.getElementById('bankBranchCode').value,
+            taxNumber: document.getElementById('taxNumber').value,
+            kinName: document.getElementById('kinName').value,
+            kinRelationship: document.getElementById('kinRelationship').value,
+            kinCellPhone: document.getElementById('kinCellPhone').value,
+            kinEmail: document.getElementById('kinEmail').value,
+            kinAddress: document.getElementById('kinAddress').value,
+            kinNotes: document.getElementById('kinNotes').value,
+            img: currentPhoto
+        };
+
+        if(editingIdx === null) employees.push(data);
+        else employees[editingIdx] = data;
+
+        localStorage.setItem('nexus_employees', JSON.stringify(employees));
+        closeOverlay('employeeOverlay');
+        renderStaff();
+        populateClockDropdown();
+        showNotification("Record Saved", "Staff profile record successfully archived.", "success");
+    }
+
+    function renderStaff() {
+        const q = document.getElementById('staffSearch').value.toLowerCase();
+        const b = document.getElementById('staffTableBody');
+        b.innerHTML = employees.filter(e => e.fullName.toLowerCase().includes(q) || e.empNum.toLowerCase().includes(q)).map((e, idx) => `
+            <tr>
+                <td>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <img src="${e.img || 'https://ui-avatars.com/api/?name=User'}" style="width:28px; height:28px; border-radius:5px; object-fit:cover;">
+                        <div><strong>${e.fullName}</strong><br><small style="color:var(--text-dim)">ID: ${e.empNum}</small></div>
+                    </div>
+                </td>
+                <td>${e.cellPhone || '-'}<br><small style="color:var(--text-dim)">${e.email || '-'}</small></td>
+                <td>${e.pos || 'Unassigned'}</td>
+                <td><span class="badge ${e.status === 'Active' ? 'badge-active' : 'badge-inactive'}">${e.status}</span></td>
+                <td style="text-align:right;">
+                    <button class="btn btn-sm" onclick="editEmployee(${idx})">Edit File</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // --- ROSTER CONTROL DASHBOARD ENGINE ---
+    function renderDepts() {
+        document.getElementById('deptTableBody').innerHTML = departments.map((d, idx) => `
+            <tr>
+                <td><strong>${d.name}</strong></td>
+                <td><span style="color:var(--casino-gold); font-weight:700;">${d.code}</span></td>
+                <td>${(d.allocatedStaff || []).length}</td>
+                <td>${(d.shifts || []).length}</td>
+                <td style="text-align:right; display:flex; gap:5px; justify-content:flex-end;">
+                    <button class="btn btn-sm" onclick="editDept(${idx})">Modify</button>
+                    <button class="btn btn-primary btn-sm" onclick="openRosterSelect(${idx})">Plan Roster</button>
+                </td>
+            </tr>
+        `).join('');
+
+        renderMasterRosterArchive();
+    }
+
+    function openDeptNew() {
+        editingDeptIdx = null;
+        tempShifts = [];
+        document.getElementById('deptName').value = '';
+        document.getElementById('deptCode').value = '';
+        document.getElementById('allocationCheckboxContainer').innerHTML = ''; 
+        renderTempShifts();
+        renderAllocationSummaryList();
+        document.getElementById('deptOverlay').style.display = 'block';
+    }
+
+    function editDept(idx) {
+        editingDeptIdx = idx;
+        const d = departments[idx];
+        document.getElementById('deptName').value = d.name;
+        document.getElementById('deptCode').value = d.code;
+        tempShifts = [...(d.shifts || [])];
+        document.getElementById('allocationCheckboxContainer').innerHTML = ''; 
+        renderTempShifts();
+        renderAllocationSummaryList();
+        document.getElementById('deptOverlay').style.display = 'block';
+    }
+
+    function openShiftOverlay() {
+        document.getElementById('shiftName').value = '';
+        document.getElementById('shiftStart').value = '';
+        document.getElementById('shiftEnd').value = '';
+        document.getElementById('shiftLunch').value = '0';
+        document.getElementById('shiftOverlay').style.display = 'flex';
+    }
+
+    function addShift() {
+        const name = document.getElementById('shiftName').value;
+        const start = document.getElementById('shiftStart').value;
+        const end = document.getElementById('shiftEnd').value;
+        if(!name || !start || !end) return showNotification("Entry Incomplete", "Please supply shift reference times.", "error");
+
+        tempShifts.push({ name, start, end, lunch: document.getElementById('shiftLunch').value });
+        closeOverlay('shiftOverlay');
+        renderTempShifts();
+    }
+
+    function renderTempShifts() {
+        document.getElementById('shiftList').innerHTML = tempShifts.map((s, i) => `
+            <div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; border:1px solid rgba(212,175,55,0.05);">
+                <div><strong>${s.name}</strong><br><small style="color:var(--text-dim)">${s.start} - ${s.end} (Deduct: ${s.lunch}m)</small></div>
+                <span style="color:var(--danger-neon); font-weight:700; cursor:pointer; font-size:0.75rem;" onclick="tempShifts.splice(${i},1); renderTempShifts();">Remove</span>
+            </div>
+        `).join('');
+    }
+
+    function openAllocationOverlay() {
+        const container = document.getElementById('allocationCheckboxContainer');
+        const allocated = editingDeptIdx !== null ? (departments[editingDeptIdx].allocatedStaff || []) : [];
+        
+        container.innerHTML = employees.filter(e => e.status === 'Active').map(e => {
+            const checked = allocated.includes(e.empNum) ? 'checked' : '';
+            return `
+                <label style="display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.02); padding:8px 12px; border-radius:6px; cursor:pointer;">
+                    <input type="checkbox" data-empnum="${e.empNum}" ${checked} onchange="renderAllocationSummaryList()" style="width:16px; height:16px;">
+                    <div><strong>${e.fullName}</strong><br><small style="color:var(--text-dim)">${e.pos || 'No Designation'}</small></div>
+                </label>
+            `;
+        }).join('');
+        document.getElementById('allocationOverlay').style.display = 'flex';
+    }
+
+    // Dynamic automatic presentation tracking pre-save hooks
+    function renderAllocationSummaryList() {
+        const targetList = document.getElementById('allocatedStaffSummaryList');
+        let allocated = [];
+        const checkboxes = document.querySelectorAll('#allocationCheckboxContainer input[type="checkbox"]');
+        
+        if (checkboxes.length > 0) {
+            document.querySelectorAll('#allocationCheckboxContainer input[type="checkbox"]:checked').forEach(cb => {
+                allocated.push(cb.dataset.empnum);
+            });
+        } else {
+            allocated = editingDeptIdx !== null ? (departments[editingDeptIdx].allocatedStaff || []) : [];
+        }
+
+        if(allocated.length === 0) {
+            targetList.innerHTML = `<span style="font-style:italic;">No core team linked.</span>`;
+            return;
+        }
+        targetList.innerHTML = allocated.map(empNum => {
+            const e = employees.find(emp => emp.empNum === empNum);
+            return e ? `• ${e.fullName} (${e.pos || 'Staff'})` : `• Identity ID: ${empNum}`;
+        }).join('<br>');
+    }
+
+    function saveDept() {
+        const name = document.getElementById('deptName').value;
+        const code = document.getElementById('deptCode').value;
+        if(!name || !code) return showNotification("Missing Fields", "Specify structural department metadata parameters.", "error");
+
+        let allocatedStaff = [];
+        const checkboxes = document.querySelectorAll('#allocationCheckboxContainer input[type="checkbox"]');
+        if(checkboxes.length > 0) {
+            document.querySelectorAll('#allocationCheckboxContainer input[type="checkbox"]:checked').forEach(cb => {
+                allocatedStaff.push(cb.dataset.empnum);
+            });
+        } else if(editingDeptIdx !== null) {
+            allocatedStaff = departments[editingDeptIdx].allocatedStaff || [];
+        }
+
+        const data = { name, code, shifts: tempShifts, allocatedStaff };
+
+        if(editingDeptIdx === null) departments.push(data);
+        else departments[editingDeptIdx] = data;
+
+        localStorage.setItem('nexus_departments', JSON.stringify(departments));
+        closeOverlay('deptOverlay');
+        renderDepts();
+        showNotification("Structure Saved", "Template model committed successfully.", "success");
+    }
+
+    // --- GRID CALENDAR OPERATION MODULES ---
+    function openRosterSelect(deptIdx) {
+        editingDeptIdx = deptIdx;
+        const d = departments[deptIdx];
+        document.getElementById('deptName').value = d.name;
+        
+        if(payrollPeriods.length === 0) return showNotification("No Tracking Cycles", "Please create an active Payroll Cycle first.", "error");
+
+        document.getElementById('payrollRosterList').innerHTML = payrollPeriods.map((p, idx) => `
+            <button class="btn" style="width:100%; text-align:left; margin-bottom:5px; padding:12px;" onclick="loadRosterForPeriod(${idx})">
+                <strong>${p.name}</strong><br><small style="color:var(--text-dim)">Range: ${p.start} to ${p.end}</small>
+            </button>
+        `).join('');
+        document.getElementById('payrollRosterSelectOverlay').style.display = 'flex';
+    }
+
+    function loadRosterForPeriod(periodIdx) {
+        const period = payrollPeriods[periodIdx];
+        const mSel = document.getElementById('rosterMonth');
+        mSel.dataset.periodStart = period.start;
+        mSel.dataset.periodEnd = period.end;
+        mSel.dataset.periodName = period.name;
+        document.getElementById('rosterTitle').innerText = document.getElementById('deptName').value + " | " + period.name;
+        
+        closeOverlay('payrollRosterSelectOverlay');
+        renderRosterGrid();
+        setTimeout(() => { document.getElementById('rosterCaptureOverlay').style.display = 'block'; }, 50);
+    }
+
+    function renderRosterGrid() {
+        const startDateStr = document.getElementById('rosterMonth').dataset.periodStart;
+        const endDateStr = document.getElementById('rosterMonth').dataset.periodEnd;
+        if(!startDateStr || !endDateStr) return;
+
+        const start = new Date(startDateStr);
+        const end = new Date(endDateStr);
+        const dates = [];
+        let curr = new Date(start);
+        while(curr <= end) {
+            dates.push(new Date(curr));
+            curr.setDate(curr.getDate() + 1);
+        }
+
+        const d = departments[editingDeptIdx];
+        const container = document.getElementById('rosterContainer');
+        container.style.gridTemplateColumns = `150px repeat(${dates.length}, 85px)`;
+
+        let html = `<div class="roster-header-cell roster-header-cell-name">Staff Member</div>`;
+        dates.forEach(date => {
+            html += `<div class="roster-header-cell">${date.getDate()}<br>${date.toLocaleDateString('default',{weekday:'short'})}</div>`;
+        });
+
+        const storeKey = `roster_${d.code}_${startDateStr}_${endDateStr}`;
+        const savedGrid = JSON.parse(localStorage.getItem(storeKey)) || {};
+
+        if((d.allocatedStaff || []).length === 0) {
+            container.innerHTML = `<div style="padding:20px; color:var(--danger-neon);">No linked core operational personnel to build grid matrix rows.</div>`;
+            return;
+        }
+
+        d.allocatedStaff.forEach(empNum => {
+            const emp = employees.find(e => e.empNum === empNum);
+            if(!emp) return;
+            html += `<div class="roster-cell roster-cell-name"><strong>${emp.fullName}</strong></div>`;
+            
+            dates.forEach(date => {
+                const dayKey = date.toISOString().split('T')[0];
+                const savedVal = savedGrid[empNum]?.[dayKey] || 'OFF';
+                
+                let selectOptions = `<option value="OFF" ${savedVal === 'OFF'?'selected':''}>OFF</option>`;
+                (d.shifts || []).forEach(sh => {
+                    selectOptions += `<option value="${sh.name}" ${savedVal === sh.name?'selected':''}>${sh.name}</option>`;
+                });
+
+                html += `
+                    <div class="roster-cell">
+                        <select data-empnum="${empNum}" data-date="${dayKey}" style="width:100%; font-size:0.7rem; padding:4px 2px;">
+                            ${selectOptions}
+                        </select>
+                    </div>
+                `;
+            });
+        });
+
+        container.innerHTML = html;
+    }
+
+    function saveRosterGrid() {
+        const startDateStr = document.getElementById('rosterMonth').dataset.periodStart;
+        const endDateStr = document.getElementById('rosterMonth').dataset.periodEnd;
+        const periodName = document.getElementById('rosterMonth').dataset.periodName;
+        const d = departments[editingDeptIdx];
+        const storeKey = `roster_${d.code}_${startDateStr}_${endDateStr}`;
+
+        const gridData = {};
+        document.querySelectorAll('#rosterContainer select').forEach(sel => {
+            const emp = sel.dataset.empnum;
+            const dt = sel.dataset.date;
+            if(!gridData[emp]) gridData[emp] = {};
+            gridData[emp][dt] = sel.value;
+        });
+
+        localStorage.setItem(storeKey, JSON.stringify(gridData));
+
+        let archiveIndex = JSON.parse(localStorage.getItem('nexus_roster_archive_index')) || [];
+        if(!archiveIndex.some(a => a.key === storeKey)) {
+            archiveIndex.push({
+                key: storeKey,
+                deptName: d.name,
+                deptCode: d.code,
+                periodName: periodName,
+                start: startDateStr,
+                end: endDateStr
+            });
+            localStorage.setItem('nexus_roster_archive_index', JSON.stringify(archiveIndex));
+        }
+
+        closeOverlay('rosterCaptureOverlay');
+        renderDepts();
+        showNotification("Grid Saved", "Monthly operations roster configuration committed successfully.", "success");
+    }
+
+    function renderMasterRosterArchive() {
+        const archiveIndex = JSON.parse(localStorage.getItem('nexus_roster_archive_index')) || [];
+        const container = document.getElementById('masterRosterArchive');
+        if(archiveIndex.length === 0) {
+            container.innerHTML = `<span style="font-style:italic; font-size:0.8rem; color:var(--text-dim);">No historical grids compiled.</span>`;
+            return;
+        }
+
+        container.innerHTML = archiveIndex.map(item => `
+            <div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; border:1px solid rgba(212,175,55,0.08); display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong style="font-size:0.8rem; color:var(--casino-gold);">${item.deptName}</strong><br>
+                    <small style="color:var(--text-dim); font-size:0.7rem;">${item.periodName}</small>
+                </div>
+                <button class="btn btn-sm" style="font-size:0.65rem; padding:4px 8px;" onclick="viewArchivedRosterGrid('${item.key}')">Inspect</button>
+            </div>
+        `).join('');
+    }
+
+    function viewArchivedRosterGrid(storeKey) {
+        const archiveIndex = JSON.parse(localStorage.getItem('nexus_roster_archive_index')) || [];
+        const match = archiveIndex.find(a => a.key === storeKey);
+        if(!match) return;
+
+        const deptMatchIdx = departments.findIndex(d => d.code === match.deptCode);
+        if(deptMatchIdx === -1) return showNotification("Error", "Department structural template no longer exists.", "error");
+
+        editingDeptIdx = deptMatchIdx;
+        const mSel = document.getElementById('rosterMonth');
+        mSel.dataset.periodStart = match.start;
+        mSel.dataset.periodEnd = match.end;
+        mSel.dataset.periodName = match.periodName;
+        document.getElementById('rosterTitle').innerText = match.deptName + " | " + match.periodName;
+        
+        renderRosterGrid();
+        document.getElementById('rosterCaptureOverlay').style.display = 'block';
+    }
+
+    // --- TIME AND SECURE CLOCK STATION VERIFICATIONS ---
+    function populateClockDropdown() {
+        const s = document.getElementById('timeStaffSelect');
+        if(s) {
+            s.innerHTML = employees.filter(e => e.status === 'Active').map(e => `
+                <option value="${e.empNum}">${e.fullName} (${e.empNum})</option>
+            `).join('');
+        }
+    }
+
+    function clockAction(type) {
+        const empNum = document.getElementById('timeStaffSelect').value;
+        if(!empNum) return showNotification("Identity Error", "No active profile identity selected.", "error");
+
+        const now = new Date();
+        const existing = timeLogs.find(l => l.empNum === empNum && l.outTime === null);
+
+        if(type === 'IN' && existing) return showNotification("Terminal Refusal", "Selected user sequence already holds active presence session.", "error");
+        if(type === 'OUT' && !existing) return showNotification("Terminal Refusal", "User contains no active inbound entry presence logs.", "error");
+
+        const timeStr = now.toTimeString().split(' ')[0].substring(0,5);
+        const dateStr = now.toLocaleDateString();
+
+        let matchedShift = "Unscheduled Rotation";
+        const dept = departments.find(d => (d.allocatedStaff || []).includes(empNum));
+        if(dept) {
+            const isoDate = now.toISOString().split('T')[0];
+            const archiveIndex = JSON.parse(localStorage.getItem('nexus_roster_archive_index')) || [];
+            const currentPeriodFile = archiveIndex.find(a => new Date(isoDate) >= new Date(a.start) && new Date(isoDate) <= new Date(a.end) && a.deptCode === dept.code);
+            if(currentPeriodFile) {
+                const savedGrid = JSON.parse(localStorage.getItem(currentPeriodFile.key)) || {};
+                matchedShift = savedGrid[empNum]?.[isoDate] || "OFF";
+            }
+        }
+
+        if(type === 'IN') {
+            // Secure manager authorization check for unscheduled or off-duty work configurations
+            if(matchedShift === 'OFF' || matchedShift === 'Unscheduled Rotation') {
+                requestAdminAccess(false, (adminName) => {
+                    const wantToAuthorize = confirm(`Staff member is not scheduled to work today ( Roster Status: ${matchedShift} ). Do you want to authorize this Clock In session?`);
+                    proceedClockIn(empNum, dateStr, timeStr, matchedShift, wantToAuthorize, adminName);
+                });
+                return; 
+            }
+            proceedClockIn(empNum, dateStr, timeStr, matchedShift, false, '');
+        } else {
+            existing.outTime = timeStr;
+            localStorage.setItem('nexus_time_logs', JSON.stringify(timeLogs));
+            showNotification("Terminal Success", `Clock OUT checked completed successfully at ${timeStr}.`, "success");
+            if(document.getElementById('payroll').style.display !== 'none') renderPayrollModule();
+        }
+    }
+
+    function proceedClockIn(empNum, dateStr, timeStr, matchedShift, authorized, adminName) {
+        timeLogs.push({
+            empNum,
+            fullName: employees.find(e => e.empNum === empNum).fullName,
+            date: dateStr,
+            inTime: timeStr,
+            outTime: null,
+            shift: matchedShift,
+            authorized: authorized,
+            authorizedBy: authorized ? adminName : ''
+        });
+        localStorage.setItem('nexus_time_logs', JSON.stringify(timeLogs));
+        showNotification("Terminal Success", `Clock IN registered at ${timeStr}. Shift: [${matchedShift}]. ${authorized ? 'Authorized by ' + adminName : ''}`, "success");
+        if(document.getElementById('payroll').style.display !== 'none') renderPayrollModule();
+    }
+
+    // --- PAYROLL CALCULATION ENGINE ---
+    function renderPayrollModule() {
+        document.getElementById('payrollPeriodList').innerHTML = payrollPeriods.map((p, idx) => `
+            <div style="background:var(--glass); border:1px solid var(--glass-border); padding:15px; border-radius:8px; display:grid; gap:5px;">
+                <strong style="color:var(--casino-gold); font-size:0.9rem;">${p.name}</strong>
+                <small style="color:var(--text-dim)">Timeline: ${p.start} to ${p.end}</small>
+                <div style="display:flex; gap:6px; margin-top:10px;">
+                    <button class="btn btn-sm" style="font-size:0.6rem; padding:2px 6px;" onclick="editPayrollPeriod(${idx})">Modify</button>
+                    <button class="btn btn-sm btn-danger-outline" style="font-size:0.6rem; padding:2px 6px;" onclick="deletePeriod(${idx})">Delete</button>
+                </div>
+            </div>
+        `).join('');
+
+        renderTotalHours();
+    }
+
+    function openPayrollPeriodNew() {
+        editingPayrollPeriodIdx = null;
+        document.getElementById('ppName').value = '';
+        document.getElementById('ppStart').value = '';
+        document.getElementById('ppEnd').value = '';
+        document.getElementById('payrollPeriodOverlay').style.display = 'flex';
+    }
+
+    function editPayrollPeriod(idx) {
+        editingPayrollPeriodIdx = idx;
+        const p = payrollPeriods[idx];
+        document.getElementById('ppName').value = p.name;
+        document.getElementById('ppStart').value = p.start;
+        document.getElementById('ppEnd').value = p.end;
+        document.getElementById('payrollPeriodOverlay').style.display = 'flex';
+    }
+
+    function savePayrollPeriod() {
+        const name = document.getElementById('ppName').value;
+        const start = document.getElementById('ppStart').value;
+        const end = document.getElementById('ppEnd').value;
+        if(!name || !start || !end) return showNotification("Validation Failed", "All tracking window fields are critical.", "error");
+
+        const data = { name, start, end };
+        if(editingPayrollPeriodIdx === null) {
+            payrollPeriods.push(data);
+        } else {
+            payrollPeriods[editingPayrollPeriodIdx] = data;
+        }
+
+        localStorage.setItem('nexus_pay_periods', JSON.stringify(payrollPeriods));
+        closeOverlay('payrollPeriodOverlay');
+        renderPayrollModule();
+        showNotification("Cycle Verified", "Operational payroll tracking configuration handled successfully.", "success");
+    }
+
+    function deletePeriod(idx) {
+        if(confirm("Confirm deletion of tracking cycle parameters index?")) {
+            payrollPeriods.splice(idx, 1);
+            localStorage.setItem('nexus_pay_periods', JSON.stringify(payrollPeriods));
+            renderPayrollModule();
+        }
+    }
+
+    function calculateHours(log) {
+        if(!log.inTime || !log.outTime) return 0;
+        const [iH, iM] = log.inTime.split(':').map(Number);
+        const [oH, oM] = log.outTime.split(':').map(Number);
+        
+        let diffMinutes = (oH * 60 + oM) - (iH * 60 + iM);
+        if(diffMinutes < 0) diffMinutes += 24 * 60; 
+        
+        const dept = departments.find(d => (d.allocatedStaff || []).includes(log.empNum));
+        const shiftTemplate = dept ? (dept.shifts || []).find(s => s.name === log.shift) : null;
+        if(shiftTemplate && shiftTemplate.lunch) {
+            diffMinutes = Math.max(0, diffMinutes - Number(shiftTemplate.lunch));
+        }
+
+        return Number((diffMinutes / 60).toFixed(2));
+    }
+
+    function renderTotalHours() {
+        const body = document.getElementById('totalHoursTableBody');
+        body.innerHTML = employees.map(e => {
+            const logs = timeLogs.filter(l => l.empNum === e.empNum);
+            let total = 0;
+            logs.forEach(l => total += calculateHours(l));
+
+            return `
+                <tr>
+                    <td><strong>${e.fullName}</strong><br><small style="color:var(--text-dim)">Pos: ${e.pos || '-'}</small></td>
+                    <td><span style="color:var(--success-neon); font-weight:700;">${total.toFixed(2)} Hours Total</span></td>
+                    <td style="text-align:right; display:flex; gap:5px; justify-content:flex-end;">
+                        <button class="btn btn-sm" onclick="viewEmployeeAttendanceLogs('${e.empNum}', '${e.fullName}')">Logs View</button>
+                        <button class="btn btn-primary btn-sm" onclick="initAdminEdit('${e.empNum}', '${e.fullName}')">Override</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function viewEmployeeAttendanceLogs(empNum, empName) {
+        document.getElementById('historyBreakdownTitle').innerText = `Timeline History Analysis: ${empName}`;
+        const body = document.getElementById('historyBreakdownTableBody');
+        const logs = timeLogs.filter(l => l.empNum === empNum);
+        
+        if(logs.length === 0) {
+            body.innerHTML = `<tr><td colspan="4" style="text-align:center; font-style:italic;">No recorded session logs found.</td></tr>`;
+        } else {
+            body.innerHTML = logs.map(l => `
+                <tr>
+                    <td>${l.date}</td>
+                    <td>${l.inTime}</td>
+                    <td>${l.outTime || '<span style="color:var(--casino-gold);">Session Open</span>'}</td>
+                    <td><strong>${calculateHours(l)} hrs</strong> <br><small style="color:var(--text-dim)">[${l.shift}]</small></td>
+                </tr>
+            `).join('');
+        }
+        document.getElementById('historyBreakdownOverlay').style.display = 'flex';
+    }
+
+    function initAdminEdit(empNum, empName) {
+        selectedEmpNum = empNum;
+        document.getElementById('adminEditTitle').innerText = `Admin Correction Sheet: ${empName}`;
+        requestAdminAccess(false, (adminOperatorName) => {
+            currentAdminName = adminOperatorName;
+            renderAdminEditTable();
+            document.getElementById('adminEditLogsOverlay').style.display = 'flex';
+        });
+    }
+
+    // Interactive adjustment layout panel tracking row changes live
+    function renderAdminEditTable() {
+        const body = document.getElementById('adminEditTableBody');
+        let totalHours = 0;
+        
+        timeLogs.forEach(log => {
+            if(log.empNum === selectedEmpNum) {
+                totalHours += calculateHours(log);
+            }
+        });
+        document.getElementById('adminEditTotalHoursSummary').innerText = `Total Worked Hours: ${totalHours.toFixed(2)} hrs`;
+
+        body.innerHTML = timeLogs.map((log, idx) => {
+            if(log.empNum !== selectedEmpNum) return '';
+            const checkedAttr = log.authorized ? 'checked' : '';
+            return `
+                <tr>
+                    <td>${log.date}<br><small style="color:var(--casino-gold)">[${log.shift}]</small></td>
+                    <td><input type="time" value="${log.inTime}" onchange="updateLogField(${idx}, 'inTime', this.value)" style="padding:4px; font-size:0.8rem;"></td>
+                    <td><input type="time" value="${log.outTime || ''}" onchange="updateLogField(${idx}, 'outTime', this.value)" style="padding:4px; font-size:0.8rem;"></td>
+                    <td style="text-align:right;">
+                        <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+                            <input type="checkbox" ${checkedAttr} onchange="updateLogField(${idx}, 'authorized', this.checked)" style="width:14px; height:14px;">
+                            <span style="font-size:0.75rem; color:var(--casino-gold);">${log.authorized ? 'Authorized' : 'Unchecked'}</span>
+                        </label>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function updateLogField(idx, field, value) {
+        timeLogs[idx][field] = value;
+        if (field !== 'authorized') {
+            timeLogs[idx].authorized = true;
+        }
+        timeLogs[idx].authorizedBy = currentAdminName;
+        localStorage.setItem('nexus_time_logs', JSON.stringify(timeLogs));
+        renderTotalHours();
+        renderAdminEditTable(); 
+    }
+
+    // --- ADMINISTRATIVE PROFILE USERS ---
+    function renderUsers() {
+        document.getElementById('userTableBody').innerHTML = platformUsers.map((u, i) => `
+            <tr>
+                <td><strong>${u.name}</strong></td>
+                <td>${u.email}</td>
+                <td><span class="badge badge-admin">${u.role}</span></td>
+                <td style="text-align:right;">
+                    <button class="btn btn-sm" style="display:inline-block;" onclick="editUser(${i})">Edit</button>
+                    ${i !== 0 ? `<button class="btn btn-sm btn-danger-outline" style="display:inline-block; margin-left:5px;" onclick="deleteUser(${i})">Revoke</button>` : ''}
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function openUserNew() {
+        editingUserIdx = null;
+        document.getElementById('userModalTitle').innerText = "Create Security Operator Profile";
+        document.getElementById('usrName').value = '';
+        document.getElementById('usrEmail').value = '';
+        document.getElementById('usrPass').value = '';
+        document.getElementById('usrRole').value = 'User';
+        document.getElementById('userOverlay').style.display = 'flex';
+    }
+
+    function editUser(i) {
+        editingUserIdx = i;
+        const u = platformUsers[i];
+        document.getElementById('userModalTitle').innerText = "Modify Operator Record Token";
+        document.getElementById('usrName').value = u.name;
+        document.getElementById('usrEmail').value = u.email;
+        document.getElementById('usrPass').value = u.password;
+        document.getElementById('usrRole').value = u.role;
+        document.getElementById('userOverlay').style.display = 'flex';
+    }
+
+    function saveUser() {
+        const name = document.getElementById('usrName').value;
+        const email = document.getElementById('usrEmail').value;
+        const password = document.getElementById('usrPass').value;
+        const role = document.getElementById('usrRole').value;
+
+        if(!name || !email || !password) return showNotification("Missing Parameters", "Fill in system credential fields.", "error");
+
+        const data = { name, email, password, role };
+        if(editingUserIdx === null) platformUsers.push(data);
+        else platformUsers[editingUserIdx] = data;
+
+        localStorage.setItem('nexus_platform_users', JSON.stringify(platformUsers));
+        closeOverlay('userOverlay');
+        renderUsers();
+        showNotification("Security Saved", "Operator credential directory updated.", "success");
+    }
+
+    function deleteUser(i) {
+        if(confirm("Permanently revoke login token privileges for this target identity user?")) {
+            platformUsers.splice(i, 1);
+            localStorage.setItem('nexus_platform_users', JSON.stringify(platformUsers));
+            renderUsers();
+        }
+    }
+
+    window.onload = function() {
+        bootstrapSupabaseStore();
+    };
+</script>
+</body>
+</html>
